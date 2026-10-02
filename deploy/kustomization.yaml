@@ -7,7 +7,7 @@ resources:
 images:
   - name: tiny-shop-api
     newName: ghcr.io/joepjoy/tiny-shop-api
-    newTag: 39cc8447dc14a24e34013713955254b52b05835b
+    newTag: 9400039450a2293b43a60f44622ad55df38f3711
   - name: tiny-shop-frontend
     newName: ghcr.io/joepjoy/tiny-shop-frontend
-    newTag: 39cc8447dc14a24e34013713955254b52b05835b
+    newTag: 9400039450a2293b43a60f44622ad55df38f3711
