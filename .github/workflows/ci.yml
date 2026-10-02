@@ -1,7 +1,8 @@
 # Runs automatically on every push to GitHub (free for public repos).
 # 1. test:   runs the API's unit tests
 # 2. deploy-test: builds the images, starts a real Kubernetes cluster inside GitHub, deploys, and checks it works
-# 3. publish: on the main branch, pushes the images to GitHub's free container registry
+# 3. publish: on the main branch, pushes the images to GitHub's free container registry,
+#    then writes the new image tag into deploy/kustomization.yaml so Argo CD deploys it
 name: CI
 
 on:
@@ -38,7 +39,7 @@ jobs:
       - name: Load images and deploy
         run: |
           kind load docker-image tiny-shop-api:local tiny-shop-frontend:local --name tiny-shop
-          kubectl apply -f k8s/
+          kubectl apply -k k8s/
           kubectl -n tiny-shop rollout status deployment/redis --timeout=120s
           kubectl -n tiny-shop rollout status deployment/api --timeout=120s
           kubectl -n tiny-shop rollout status deployment/frontend --timeout=120s
@@ -52,7 +53,7 @@ jobs:
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write
       packages: write
     steps:
       - uses: actions/checkout@v4
@@ -68,3 +69,12 @@ jobs:
             docker build -t ghcr.io/$OWNER/tiny-shop-$svc:${{ github.sha }} -t ghcr.io/$OWNER/tiny-shop-$svc:latest ./$svc
             docker push --all-tags ghcr.io/$OWNER/tiny-shop-$svc
           done
+      - name: Tell Argo CD about the new images
+        run: |
+          sed -i "s/newTag: .*/newTag: ${{ github.sha }}/" deploy/kustomization.yaml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add deploy/kustomization.yaml
+          git commit -m "Deploy ${{ github.sha }}"
+          git pull --rebase origin main
+          git push origin HEAD:main

@@ -1,0 +1,13 @@
+# What Argo CD deploys: the k8s/ files with the images CI published.
+# CI updates newTag after every build. Don't edit it by hand.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../k8s
+images:
+  - name: tiny-shop-api
+    newName: ghcr.io/joepjoy/tiny-shop-api
+    newTag: latest
+  - name: tiny-shop-frontend
+    newName: ghcr.io/joepjoy/tiny-shop-frontend
+    newTag: latest
