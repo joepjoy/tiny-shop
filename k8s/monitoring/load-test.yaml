@@ -1,0 +1,22 @@
+# Sends lots of requests to the API so you can watch autoscaling happen.
+# Start:  kubectl apply -f k8s/monitoring/load-test.yaml
+# Stop:   kubectl delete -f k8s/monitoring/load-test.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: load-test
+  namespace: tiny-shop
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: load-test
+  template:
+    metadata:
+      labels:
+        app: load-test
+    spec:
+      containers:
+        - name: load
+          image: busybox:1.36
+          command: ["sh", "-c", "while true; do wget -q -O- http://api:5000/api/products > /dev/null; done"]

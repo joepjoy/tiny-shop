@@ -1,0 +1,17 @@
+# Tells Prometheus to collect metrics from the API's /metrics page every 15 seconds.
+# Apply this only after installing the monitoring stack (Step 6 in GUIDE.md).
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: api
+  namespace: tiny-shop
+  labels:
+    release: monitoring
+spec:
+  selector:
+    matchLabels:
+      app: api
+  endpoints:
+    - port: http
+      path: /metrics
+      interval: 15s

@@ -1,0 +1,70 @@
+# Runs automatically on every push to GitHub (free for public repos).
+# 1. test:   runs the API's unit tests
+# 2. deploy-test: builds the images, starts a real Kubernetes cluster inside GitHub, deploys, and checks it works
+# 3. publish: on the main branch, pushes the images to GitHub's free container registry
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r api/requirements-dev.txt
+      - run: pytest -v
+        working-directory: api
+
+  deploy-test:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build images
+        run: |
+          docker build -t tiny-shop-api:local ./api
+          docker build -t tiny-shop-frontend:local ./frontend
+      - name: Create Kubernetes cluster
+        uses: helm/kind-action@v1
+        with:
+          cluster_name: tiny-shop
+          config: kind-config.yaml
+      - name: Load images and deploy
+        run: |
+          kind load docker-image tiny-shop-api:local tiny-shop-frontend:local --name tiny-shop
+          kubectl apply -f k8s/
+          kubectl -n tiny-shop rollout status deployment/redis --timeout=120s
+          kubectl -n tiny-shop rollout status deployment/api --timeout=120s
+          kubectl -n tiny-shop rollout status deployment/frontend --timeout=120s
+      - name: Smoke test
+        run: |
+          curl --fail --retry 5 --retry-delay 3 --retry-all-errors http://localhost:8080/api/products
+          curl --fail -X POST -H "Content-Type: application/json" -d '{"product_id": 1}' http://localhost:8080/api/orders
+
+  publish:
+    needs: deploy-test
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build and push
+        run: |
+          OWNER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
+          for svc in api frontend; do
+            docker build -t ghcr.io/$OWNER/tiny-shop-$svc:${{ github.sha }} -t ghcr.io/$OWNER/tiny-shop-$svc:latest ./$svc
+            docker push --all-tags ghcr.io/$OWNER/tiny-shop-$svc
+          done
