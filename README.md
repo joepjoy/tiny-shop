@@ -65,3 +65,6 @@ pytest
 ## Cost
 
 $0. Everything runs locally on kind, and GitHub Actions and GHCR are free for public repos.
+
+<img width="1917" height="995" alt="image" src="https://github.com/user-attachments/assets/41daf95e-b8af-49b9-a96b-4774ecef1eb6" />
+
