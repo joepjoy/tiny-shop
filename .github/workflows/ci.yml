@@ -31,6 +31,16 @@ jobs:
         run: |
           docker build -t tiny-shop-api:local ./api
           docker build -t tiny-shop-frontend:local ./frontend
+      - name: Scan images for known security holes (fails on CRITICAL ones that have a fix)
+        run: |
+          for img in tiny-shop-api:local tiny-shop-frontend:local; do
+            docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:latest \
+              image --severity CRITICAL --ignore-unfixed --exit-code 1 --no-progress "$img"
+          done
+      - name: Check Kubernetes files for risky settings (report only)
+        run: |
+          docker run --rm -v "$PWD/k8s:/k8s" aquasec/trivy:latest \
+            config --severity HIGH,CRITICAL --exit-code 0 /k8s
       - name: Create Kubernetes cluster
         uses: helm/kind-action@v1
         with:
