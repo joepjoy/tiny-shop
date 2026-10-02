@@ -1,0 +1,42 @@
+# Alert rules for Tiny Shop. Alertmanager sends alerts labelled notify: discord to Discord.
+# Apply with: kubectl apply -f k8s/monitoring/alerts.yaml
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: tiny-shop-alerts
+  namespace: tiny-shop
+  labels:
+    release: monitoring
+spec:
+  groups:
+    - name: tiny-shop
+      rules:
+        - alert: TinyShopApiDown
+          expr: sum(up{namespace="tiny-shop", service="api"}) == 0 or absent(up{namespace="tiny-shop", service="api"})
+          for: 1m
+          labels:
+            severity: critical
+            notify: discord
+          annotations:
+            summary: "Tiny Shop API is down"
+            description: "Prometheus has not reached any API pod for 1 minute. Customers cannot load products or place orders."
+        - alert: TinyShopHighTraffic
+          expr: sum(rate(shop_requests_total{namespace="tiny-shop"}[1m])) > 20
+          for: 1m
+          labels:
+            severity: warning
+            notify: discord
+          annotations:
+            summary: "Tiny Shop traffic is high"
+            description: "The API is handling {{ $value | humanize }} requests per second."
+        - alert: TinyShopAtMaxScale
+          expr: |
+            kube_horizontalpodautoscaler_status_current_replicas{namespace="tiny-shop", horizontalpodautoscaler="api"}
+              >= kube_horizontalpodautoscaler_spec_max_replicas{namespace="tiny-shop", horizontalpodautoscaler="api"}
+          for: 1m
+          labels:
+            severity: warning
+            notify: discord
+          annotations:
+            summary: "Tiny Shop API is at its pod limit"
+            description: "The autoscaler is running the maximum of {{ $value }} API pods and cannot add more."
