@@ -6,3 +6,4 @@ resources:
   - 20-api.yaml
   - 30-frontend.yaml
   - 40-autoscaler.yaml
+  - 50-network-policies.yaml
