@@ -66,5 +66,9 @@ pytest
 
 $0. Everything runs locally on kind, and GitHub Actions and GHCR are free for public repos.
 
-<img width="1917" height="995" alt="image" src="https://github.com/user-attachments/assets/41daf95e-b8af-49b9-a96b-4774ecef1eb6" />
+<img width="1121" height="542" alt="image" src="https://github.com/user-attachments/assets/d258fdd8-d727-4325-86c0-0c8026aef6ea" />
+<img width="1433" height="632" alt="image" src="https://github.com/user-attachments/assets/03cebff6-d6ce-46a6-b9a9-0e4ec46d7d81" />
+<img width="1882" height="698" alt="image" src="https://github.com/user-attachments/assets/8792441f-c040-467e-87eb-6d3683be6c18" />
+
+
 
